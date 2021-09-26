@@ -1,0 +1,3 @@
+
+class FatalException(BaseException):
+    pass
