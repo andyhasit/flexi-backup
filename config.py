@@ -19,9 +19,8 @@ class Config:
 
 class Target:
     """An individual backup target"""
-    def __init__(self, name=None, path=None, handler=None):
+    def __init__(self, name=None, handler=None):
         self.name = name
-        self.path = path
         self.handler = handler
 
     def run(self):
@@ -60,17 +59,19 @@ def _load_json_from_config_file(config_file):
 
 def _extract_targets(data, config_file):
     targets = []
-    for key, value in data['targets'].items():
+    for name, kwargs in data['targets'].items():
         try:
-            path = value['path']
-            handler = value['handler']
-            args = value['args']
-        except KeyError:
-            keys = '"path", "handler" and "args"'
+            if 'cmd' in kwargs:
+                assert 'handler' not in kwargs
+                handler = 'cmd'
+            else:
+                assert 'handler' in kwargs
+                handler = kwargs['handler']
+        except AssertionError:
             raise FatalException(
-                'Mistake in config file:\n{}\nEach target must have keys:{}.'
-                .format(config_file, keys))
-        targets.append(Target(key, path, _get_handler(handler, args)))
+                'Mistake in config file:\n{}\nEach target must have "cmd" or "handler".'
+                .format(config_file))
+        targets.append(Target(name, _get_handler(handler, kwargs)))
     return targets
 
 
